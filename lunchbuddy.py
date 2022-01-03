@@ -9,10 +9,12 @@ from slack_sdk.errors import SlackApiError
 
 # Setup - this function requires the SLACK_API_TOKEN environmental variable to run.
 client = WebClient(token=os.environ["SLACK_API_TOKEN"])
-CHANNEL         = '#randomcoffees'
+CHANNEL         = '#random_matching'
 CHANNEL_TESTING = '#bot_testing'
 LOOKBACK_DAYS   = 28
 MAGICAL_TEXT    = 'This weeks random coffees are'
+LOOKBACK_CHANNEL = "matching_archive"
+LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the #lunch_buddies channel in order to get points!! Have fun :))"
 
 
 def get_channel_id(channel):
@@ -65,7 +67,7 @@ def get_previous_pairs(channel, testing, lookback_days=LOOKBACK_DAYS):
     try:
         # Setup params for client.conversations_history(). slack accepts time in seconds since epoch
         params = {
-            'channel': get_channel_id(channel),  # Get channel id
+            'channel': get_channel_id(LOOKBACK_CHANNEL),  # Get channel id
             'limit': 200,  # Pagination - 200 messages per API call
             'oldest': (datetime.datetime.today() - datetime.timedelta(days=lookback_days)).timestamp(),
             'newest': datetime.datetime.now().timestamp()
@@ -129,9 +131,9 @@ def post_to_slack_channel_message(message, channel):
     try:
         if isinstance(message, list):
             # The user would like to send a block
-            response = client.chat_postMessage(channel=channel, blocks=message)
+            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL, blocks=message)
         else:
-            response = client.chat_postMessage(channel=channel, text=message)
+            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL, text=message)
     except SlackApiError as e:
         # From v2.x of the slack library failed responses are raised as errors. Here we catch the exception and
         # downgrade the alert
@@ -301,6 +303,16 @@ def format_message_from_list_of_pairs(pairs):
         return None
 
 
+def dm_pairs_to_individuals(pairs):
+    for pair in pairs:
+        print(pair)
+        res = client.conversations_open(users=pair,return_im=True) #try and create an IM
+        print(res) #print subsequent IM response
+        #client.chat_postMessage(channel="id",test=LUNCHBUDDY_MESSAGE)
+
+
+    return True
+
 def pyslackrandomcoffee(work_ids=None, testing=False):
     '''Pairs the members of a slack channel up randomly and post it back to the channel in a message.
 
@@ -324,6 +336,8 @@ def pyslackrandomcoffee(work_ids=None, testing=False):
 
     if message:
         post_to_slack_channel_message(message, channel)
+        dm_pairs_to_individuals(pairs)
+    
 
 
 if __name__ == '__main__':
