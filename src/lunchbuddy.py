@@ -4,12 +4,14 @@ import os
 import random
 import logging
 import datetime
+import copy
+from typing import NewType
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 # Setup - this function requires the SLACK_API_TOKEN environmental variable to run.
-client = WebClient(token=os.environ["SLACK_API_TOKEN"])
-CHANNEL         = '#random_matching'
+client = WebClient(token="xoxb-2169497496422-2897210689269-NAF9zmgLtULouxPfkLve13iR")#os.environ["SLACK_API_TOKEN"])
+CHANNEL         = '#lunchbuddies'
 CHANNEL_TESTING = '#bot_testing'
 LOOKBACK_DAYS   = 28
 MAGICAL_TEXT    = 'This weeks random coffees are'
@@ -306,9 +308,14 @@ def format_message_from_list_of_pairs(pairs):
 def dm_pairs_to_individuals(pairs):
     for pair in pairs:
         print(pair)
-        res = client.conversations_open(users=pair,return_im=True) #try and create an IM
+        newPairs = []
+        for p in pair:
+            newPairs.append(p[2:len(p)-1])
+            
+        
+        res = client.conversations_open(users=newPairs,return_im=True) #try and create an IM
         print(res) #print subsequent IM response
-        #client.chat_postMessage(channel="id",test=LUNCHBUDDY_MESSAGE)
+        client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE)
 
 
     return True
@@ -341,4 +348,4 @@ def pyslackrandomcoffee(work_ids=None, testing=False):
 
 
 if __name__ == '__main__':
-    pyslackrandomcoffee(testing=True)
+    pyslackrandomcoffee(testing=False)
