@@ -5,13 +5,16 @@ import random
 import logging
 import datetime
 import copy
-from typing import NewType
+from os import environ
+# from typing import NewType
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 # Setup - this function requires the SLACK_API_TOKEN environmental variable to run.
-client = WebClient(token="xoxb-2169497496422-2897210689269-NAF9zmgLtULouxPfkLve13iR")#os.environ["SLACK_API_TOKEN"])
-CHANNEL         = '#lunchbuddies'
+token = environ.get("SLACK_TOKEN")
+client = WebClient(token=token)
+CHANNEL         = '#lunch_buddies'
+CHANNEL_ID = "C02C9S92XD5"
 CHANNEL_TESTING = '#bot_testing'
 LOOKBACK_DAYS   = 28
 MAGICAL_TEXT    = 'This weeks random coffees are'
@@ -36,7 +39,7 @@ def get_channel_id(channel):
             if c.get('name') == channel.strip('#'):
                 channel_id = c['id']
 
-        return channel_id
+        return CHANNEL_ID
 
     except SlackApiError as e:
         logging.debug(f"Error getting list of members in {channel}: {e}")
@@ -91,10 +94,10 @@ def get_previous_pairs(channel, testing, lookback_days=LOOKBACK_DAYS):
 
     # We are only interested in text that contain the MAGICAL_TEXT text and '<@U' (in prod) or '@' in testing.
     # TODO: only extract messages sent by the BOT, so we do not process messages from users using the same MAGICAL_TEXT
-    if testing:
-        texts = [t['text'] for t in conversation_history if MAGICAL_TEXT in t['text'] and '@' in t['text']]
-    else:
-        texts = [t['text'] for t in conversation_history if MAGICAL_TEXT in t['text'] and '<@U' in t['text']]
+    # if testing:
+    texts = [t['text'] for t in conversation_history if MAGICAL_TEXT in t['text'] and '@' in t['text']]
+    # else:
+    #     texts = [t['text'] for t in conversation_history if MAGICAL_TEXT in t['text'] and '<@U' in t['text']]
 
     if len(texts):
         # Each message text is a broken into a list by the newline character and the first and last line are disregarded
@@ -179,10 +182,10 @@ def get_members_list(channel, testing):
 
         # Return a list of members as should be written in slack. The @name syntax is not active and will not
         # contact the users in the slack channel, so perfect for testing.
-        if testing:
-            members = [f'@{u["name"]}' for u in users_list if u['id'] in member_ids and not u['is_bot']]
-        else:
-            members = [f'<@{u["id"]}>' for u in users_list if u['id'] in member_ids and not u['is_bot']]
+        # if testing:
+        members = [f'@{u["name"]}' for u in users_list if u['id'] in member_ids and not u['is_bot']]
+        # else:
+        #     members = [f'<@{u["id"]}>' for u in users_list if u['id'] in member_ids and not u['is_bot']]
 
         return members
 
@@ -313,9 +316,8 @@ def dm_pairs_to_individuals(pairs):
             newPairs.append(p[2:len(p)-1])
             
         
-        res = client.conversations_open(users=newPairs,return_im=True) #try and create an IM
-        print(res) #print subsequent IM response
-        client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE)
+        # res = client.conversations_open(users=newPairs,return_im=True) #try and create an IM
+        # client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE)
 
 
     return True
