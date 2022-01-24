@@ -20,7 +20,7 @@ LOOKBACK_DAYS   = 28
 MAGICAL_TEXT    = 'This weeks random coffees are'
 LOOKBACK_CHANNEL = "matching_archive"
 LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the #lunch_buddies channel in order to get points!! Have fun :))"
-
+non_notifying_pairings = []
 
 def get_channel_id(channel):
     '''Convert a human readable channel name into a slack channel ID that can be used in the API.
@@ -39,7 +39,7 @@ def get_channel_id(channel):
             if c.get('name') == channel.strip('#'):
                 channel_id = c['id']
 
-        return CHANNEL_ID
+        return channel_id
 
     except SlackApiError as e:
         logging.debug(f"Error getting list of members in {channel}: {e}")
@@ -72,7 +72,7 @@ def get_previous_pairs(channel, testing, lookback_days=LOOKBACK_DAYS):
     try:
         # Setup params for client.conversations_history(). slack accepts time in seconds since epoch
         params = {
-            'channel': get_channel_id(LOOKBACK_CHANNEL),  # Get channel id
+            'channel': "C02S1FPQ5QX",  # Get channel id
             'limit': 200,  # Pagination - 200 messages per API call
             'oldest': (datetime.datetime.today() - datetime.timedelta(days=lookback_days)).timestamp(),
             'newest': datetime.datetime.now().timestamp()
@@ -174,7 +174,7 @@ def get_members_list(channel, testing):
 
     try:
         # Get the member ids from the channel
-        channel_id = get_channel_id(channel)
+        channel_id = "C02C9S92XD5"
         member_ids = client.conversations_members(channel=channel_id)['members']
 
         # Get the mapping between member ids and names
@@ -183,9 +183,9 @@ def get_members_list(channel, testing):
         # Return a list of members as should be written in slack. The @name syntax is not active and will not
         # contact the users in the slack channel, so perfect for testing.
         # if testing:
-        members = [f'@{u["name"]}' for u in users_list if u['id'] in member_ids and not u['is_bot']]
+        # non_notifying_pairings = [f'@{u["name"]}' for u in users_list if u['id'] in member_ids and not u['is_bot']]
         # else:
-        #     members = [f'<@{u["id"]}>' for u in users_list if u['id'] in member_ids and not u['is_bot']]
+        members = [f'<@{u["id"]}>' for u in users_list if u['id'] in member_ids and not u['is_bot']]
 
         return members
 
@@ -254,6 +254,7 @@ def generate_pairs(members, previous_pairs=None):
             pair (tuple): The input member1 and the matched member2
             memebers (list): The members list, but with member2 removed
         '''
+        # print(len(members_previous_matches))
         if members_previous_matches:
             member2_candidates = [member for member in members if member not in members_previous_matches[member1]]
 
@@ -309,15 +310,17 @@ def format_message_from_list_of_pairs(pairs):
 
 
 def dm_pairs_to_individuals(pairs):
+    '''Takes the pairing list and creates a new DM for the members + lunch buddy bot and dm's them
+    Args:
+        pairs (list): list of tuples of slack ID
+    '''
     for pair in pairs:
-        print(pair)
         newPairs = []
         for p in pair:
             newPairs.append(p[2:len(p)-1])
-            
+        client.conversations_open(users=newPairs,return_im=True) 
+        client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE)
         
-        # res = client.conversations_open(users=newPairs,return_im=True) #try and create an IM
-        # client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE)
 
 
     return True
