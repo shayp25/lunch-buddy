@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 
+from cgitb import text
 import os
 import random
 import logging
 import datetime
 import copy
+import json
 from os import environ
 # from typing import NewType
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-# Setup - this function requires the SLACK_API_TOKEN environmental variable to run.
+# Setup - this function requires the SLACK_TOKEN environmental variable to run.
 token = environ.get("SLACK_TOKEN")
 client = WebClient(token=token)
 CHANNEL         = '#lunch_buddies'
@@ -19,7 +21,7 @@ CHANNEL_TESTING = '#bot_testing'
 LOOKBACK_DAYS   = 28
 MAGICAL_TEXT    = 'This weeks random coffees are'
 LOOKBACK_CHANNEL = "matching_archive"
-LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the #lunch_buddies channel in order to get points!! Have fun :))"
+LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the <#lunch_buddies> channel in order to get points!! Have fun :))"
 non_notifying_pairings = []
 
 def get_channel_id(channel):
@@ -314,12 +316,14 @@ def dm_pairs_to_individuals(pairs):
     Args:
         pairs (list): list of tuples of slack ID
     '''
+    json_array = json.load(open ('quotes.json'))
+    quote = random.sample(json_array,1)
     for pair in pairs:
         newPairs = []
         for p in pair:
             newPairs.append(p[2:len(p)-1])
-        client.conversations_open(users=newPairs,return_im=True) 
-        client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE)
+        res = client.conversations_open(users=newPairs,return_im=True) 
+        client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE,attachments={"text":quote})
         
 
 
@@ -347,6 +351,7 @@ def pyslackrandomcoffee(work_ids=None, testing=False):
     message        = format_message_from_list_of_pairs(pairs)
 
     if message:
+        print(message)
         post_to_slack_channel_message(message, channel)
         dm_pairs_to_individuals(pairs)
     
