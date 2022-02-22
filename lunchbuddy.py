@@ -21,7 +21,7 @@ CHANNEL_TESTING = '#bot_testing'
 LOOKBACK_DAYS   = 28
 MAGICAL_TEXT    = 'This weeks random coffees are'
 LOOKBACK_CHANNEL = "matching_archive"
-LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the <#lunch_buddies> channel in order to get points!! Have fun :))"
+LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the <#C02C9S92XD5> channel in order to get points!! Have fun :))"
 non_notifying_pairings = []
 
 def get_channel_id(channel):
@@ -317,13 +317,17 @@ def dm_pairs_to_individuals(pairs):
         pairs (list): list of tuples of slack ID
     '''
     json_array = json.load(open ('quotes.json'))
-    quote = random.sample(json_array,1)
+    quote = random.sample(json_array,1)[0]
     for pair in pairs:
         newPairs = []
         for p in pair:
             newPairs.append(p[2:len(p)-1])
-        res = client.conversations_open(users=newPairs,return_im=True) 
-        client.chat_postMessage(channel=res["channel"]["id"],text=LUNCHBUDDY_MESSAGE,attachments={"text":quote})
+        res = client.conversations_open(users=newPairs,return_im=True)
+        print("hello")
+        global LUNCHBUDDY_MESSAGE
+        message = LUNCHBUDDY_MESSAGE+"\n \n \n Dwight Schrute quote of the week: \n" +str(quote)
+        res2 = client.chat_postMessage(channel=res["channel"]["id"],text=message)
+        print(res2)
         
 
 
