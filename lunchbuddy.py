@@ -325,7 +325,7 @@ def dm_pairs_to_individuals(pairs):
         res = client.conversations_open(users=newPairs,return_im=True)
         print("hello")
         global LUNCHBUDDY_MESSAGE
-        message = LUNCHBUDDY_MESSAGE+"\n \n \n Dwight Schrute quote of the week: \n" +str(quote)
+        message = LUNCHBUDDY_MESSAGE+"\n \n \n Dwight Schrute quote of the week: \n" +str(quote[0])
         res2 = client.chat_postMessage(channel=res["channel"]["id"],text=message)
         print(res2)
         
