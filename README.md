@@ -41,7 +41,7 @@ From here you should see the channel ID at the bottom and copy that for both cha
 
 Once you enter the lambda function you will click *configuration* and *Environment Variables*
 
-![AWS ENV vars](/docs/ENVVARS.png)
+![AWS ENV vars](/docs/ENVVars.png)
 
 2. From here get the API token from step 4 of the previous section and update it under *SLACK_TOKEN* and take the 2 channel ID's from step 5 in the previous section.
 
