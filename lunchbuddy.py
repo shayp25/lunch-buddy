@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from cgitb import text
+from glob import glob
 import os
 import random
 import logging
@@ -8,47 +9,21 @@ import datetime
 import copy
 import json
 from os import environ
-# from typing import NewType
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 # Setup - this function requires the SLACK_TOKEN environmental variable to run.
 token = environ.get("SLACK_TOKEN")
 client = WebClient(token=token)
-CHANNEL         = '#lunch_buddies'
-CHANNEL_ID = "C02C9S92XD5"
-CHANNEL_TESTING = '#bot_testing'
+CHANNEL_ID = environ.get("CHANNEL_ID")
+LOOKBACK_CHANNEL_ID= environ.get("ARCHIVE_ID")
 LOOKBACK_DAYS   = 28
 MAGICAL_TEXT    = 'This weeks random coffees are'
-LOOKBACK_CHANNEL = "matching_archive"
-LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the <#C02C9S92XD5> channel in order to get points!! Have fun :))"
+LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the <#"+CHANNEL_ID+"> channel in order to get points!! Have fun :))"
 non_notifying_pairings = []
 
-def get_channel_id(channel):
-    '''Convert a human readable channel name into a slack channel ID that can be used in the API.
 
-    Args:
-        channel: Human readable channel name, such as #randomcoffees
-
-    Returns:
-        channel_id: Slack ID for the channel, such as CE2G4C9L2
-    '''
-
-    try:
-        # Get the channel ID of the channel
-        channel_list = client.conversations_list(limit=1000)["channels"]
-        for c in channel_list:
-            if c.get('name') == channel.strip('#'):
-                channel_id = c['id']
-
-        return channel_id
-
-    except SlackApiError as e:
-        logging.debug(f"Error getting list of members in {channel}: {e}")
-        return None
-
-
-def get_previous_pairs(channel, testing, lookback_days=LOOKBACK_DAYS):
+def get_previous_pairs(channel, lookback_days=LOOKBACK_DAYS):
     '''
     Trawl through the messages in the channel and find those that contain magical text and extract the pairs from these
     messages.
@@ -74,7 +49,7 @@ def get_previous_pairs(channel, testing, lookback_days=LOOKBACK_DAYS):
     try:
         # Setup params for client.conversations_history(). slack accepts time in seconds since epoch
         params = {
-            'channel': "C02S1FPQ5QX",  # Get channel id
+            'channel': channel,  # Get channel id C02S1FPQ5QX
             'limit': 200,  # Pagination - 200 messages per API call
             'oldest': (datetime.datetime.today() - datetime.timedelta(days=lookback_days)).timestamp(),
             'newest': datetime.datetime.now().timestamp()
@@ -138,9 +113,9 @@ def post_to_slack_channel_message(message, channel):
     try:
         if isinstance(message, list):
             # The user would like to send a block
-            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL, blocks=message)
+            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL_ID, blocks=message)
         else:
-            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL, text=message)
+            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL_ID, text=message)
     except SlackApiError as e:
         # From v2.x of the slack library failed responses are raised as errors. Here we catch the exception and
         # downgrade the alert
@@ -155,7 +130,7 @@ def post_to_slack_channel_message(message, channel):
             return True
 
 
-def get_members_list(channel, testing):
+def get_members_list(channel):
     '''Get the list of members of a channel.
 
     Args:
@@ -173,11 +148,9 @@ def get_members_list(channel, testing):
         notify the user1, but it will look like the correct link (but not blue). <@UABCDEFG1> on the other hand will
         notify the link and be a blue link that looks like @user1 in slack.
     '''
-
     try:
         # Get the member ids from the channel
-        channel_id = "C02C9S92XD5"
-        member_ids = client.conversations_members(channel=channel_id)['members']
+        member_ids = client.conversations_members(channel=channel)['members']
 
         # Get the mapping between member ids and names
         users_list = client.users_list()['members']
@@ -317,7 +290,7 @@ def dm_pairs_to_individuals(pairs):
         pairs (list): list of tuples of slack ID
     '''
     json_array = json.load(open ('quotes.json'))
-    quote = random.sample(json_array,1)[0]
+    quote = random.sample(json_array,1)
     for pair in pairs:
         newPairs = []
         for p in pair:
@@ -325,7 +298,7 @@ def dm_pairs_to_individuals(pairs):
         res = client.conversations_open(users=newPairs,return_im=True)
         print("hello")
         global LUNCHBUDDY_MESSAGE
-        message = LUNCHBUDDY_MESSAGE+"\n \n \n Dwight Schrute quote of the week: \n" +str(quote[0])
+        message = LUNCHBUDDY_MESSAGE+"\n \n \n" +str(quote)
         res2 = client.chat_postMessage(channel=res["channel"]["id"],text=message)
         print(res2)
         
@@ -333,7 +306,7 @@ def dm_pairs_to_individuals(pairs):
 
     return True
 
-def pyslackrandomcoffee(work_ids=None, testing=False):
+def pyslackrandomcoffee(work_ids=None,testing=False):
     '''Pairs the members of a slack channel up randomly and post it back to the channel in a message.
 
     Args:
@@ -344,22 +317,16 @@ def pyslackrandomcoffee(work_ids=None, testing=False):
         This script does utilize work_ids, but STAU requires it, so it is present, but unused.
     '''
 
-    if testing is False:
-        channel = CHANNEL
-    else:
-        channel = CHANNEL_TESTING
-
-    members        = get_members_list(channel, testing)
-    previous_pairs = get_previous_pairs(channel, testing)
+    members        = get_members_list(CHANNEL_ID)
+    previous_pairs = get_previous_pairs(LOOKBACK_CHANNEL_ID)
     pairs          = generate_pairs(members, previous_pairs)
     message        = format_message_from_list_of_pairs(pairs)
 
     if message:
         print(message)
-        post_to_slack_channel_message(message, channel)
+        post_to_slack_channel_message(message, LOOKBACK_CHANNEL_ID)
         dm_pairs_to_individuals(pairs)
     
-
 
 if __name__ == '__main__':
     pyslackrandomcoffee(testing=False)
