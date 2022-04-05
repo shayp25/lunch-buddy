@@ -1,0 +1,30 @@
+display_information:
+  name: Meha's Assistant
+  description: Assistant to the Regional Manager
+  background_color: "#004492"
+features:
+  bot_user:
+    display_name: lunchbuddy
+    always_online: false
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read
+      - channels:history
+      - channels:manage
+      - channels:read
+      - chat:write
+      - groups:history
+      - groups:read
+      - groups:write
+      - im:history
+      - im:read
+      - im:write
+      - mpim:history
+      - mpim:read
+      - mpim:write
+      - users:read
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
