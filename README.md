@@ -24,7 +24,7 @@ This is the user MALs will see in their lunch buddy pairing and you can add an i
 
 Then click Copy to copy your API token and you'll need it in the next step for AWS.
 
-5. Create both the lunch_buddy and archive channels, these can be named whatever you want but make sure the archive channel is private. You'll also need to add the bot to this channel (just like a normal user). Remember the lunch_buddy channel is where the users we want to match will be and archive will be a vieew just for record keeping.
+5. Create both the lunch_buddy and archive channels, these can be named whatever you want but make sure the archive channel is private. You'll also need to add the bot to this channel (just @ them in the channel). Remember the lunch_buddy channel is where the users we want to match will be and archive will be a vieew just for record keeping.
 
 5. Now you need to get the Channel IDs from Slack for the archive channel and the lunch_buddies channel. To do this go to the Channel and click on it's name.
 
