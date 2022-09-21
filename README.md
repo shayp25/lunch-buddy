@@ -35,7 +35,21 @@ From here you should see the channel ID at the bottom and copy that for both cha
 ![Channel Info](/docs/ChannelInfo.png)
 
 ## AWS Install
-1. The code base is set up already on AWS lambda on the Internal Socials chair's aws account so year to year you should just have to change the env variables. The app is called lunchbuddy under the AWS lambda tab.
+1. In order to deploy to aws you're going to want to first create a zip with the code and all it's dependancies. AWS Python environments are pretty bare even small things like request are needed. t\To get this zip file you're going to want to run *zip -r deploy.zip ./quotes.json ./slack ./slack_sdk ./slack_sdk-3.13.0.dist-info ./lunchbuddy.py* 
+
+2. From here you'll want to create your actual lambda function on AWS. 
+
+![Create Lambda Function](/docs/AWSCreateLambdaFunction.jpg)
+
+Here are some basic things I selected about the environment.
+
+![Setup environment](/docs/AWSEnvironDetails.jpg)
+
+Then you simply upload your zip file with your code and dependancies
+
+![Upload zip](/docs/UploadZIp.jpg)
+
+3. This is what your function will look like whenever its created and if you need to update any details.
 
 ![AWS Lambda Functions](/docs/AWSLambdaFunctions.png)
 
@@ -43,10 +57,10 @@ Once you enter the lambda function you will click *configuration* and *Environme
 
 ![AWS ENV vars](/docs/ENVVars.png)
 
-2. From here get the API token from step 4 of the previous section and update it under *SLACK_TOKEN* and take the 2 channel ID's from step 5 in the previous section.
+4. From here get the API token from step 4 of the previous section and update it under *SLACK_TOKEN* and take the 2 channel ID's from step 5 in the previous section.
 
-3. To set up the automation go to AWS EventBridge and click on *rules* on the left hand side and then the *monday-9am* rule we have in place. From here you can Enable and Disable the bot so it'll automatically run at 9am on monday.
+5. To set up the automation go to AWS EventBridge and click on *rules* on the left hand side and then the *monday-9am* rule we have in place. From here you can Enable and Disable the bot so it'll automatically run at 9am on monday.
 
 ![Toggle Event Bridge](/docs/Monday-9amRule.png)
 
-4. Celebrate you're done! The bot should run at 9am every monday now :fireworks: :gift_heart: :sunglasses:
+6. Celebrate you're done! The bot should run at 9am every monday now :fireworks: :gift_heart: :sunglasses:
