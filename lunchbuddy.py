@@ -16,10 +16,11 @@ from slack_sdk.errors import SlackApiError
 token = environ.get("SLACK_TOKEN")
 client = WebClient(token=token)
 CHANNEL_ID = environ.get("CHANNEL_ID")
-LOOKBACK_CHANNEL_ID= environ.get("ARCHIVE_ID")
-LOOKBACK_DAYS   = 28
-MAGICAL_TEXT    = 'This weeks random coffees are'
-LUNCHBUDDY_MESSAGE="Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the <#"+CHANNEL_ID+"> channel in order to get points!! Have fun :))"
+LOOKBACK_CHANNEL_ID = environ.get("ARCHIVE_ID")
+LOOKBACK_DAYS = 28
+MAGICAL_TEXT = 'This weeks random coffees are'
+LUNCHBUDDY_MESSAGE = "Hey guys! This is your lunch buddies pairing for the week! Send a photo of yall into the <#" + \
+    CHANNEL_ID+"> channel in order to get points!! Have fun :))"
 non_notifying_pairings = []
 
 
@@ -60,7 +61,8 @@ def get_previous_pairs(channel, lookback_days=LOOKBACK_DAYS):
         has_more = True
         next_cursor = None
         while has_more:
-            response = client.conversations_history(**params, cursor=next_cursor)
+            response = client.conversations_history(
+                **params, cursor=next_cursor)
             conversation_history += response["messages"]
             has_more = response['has_more']
             if has_more:
@@ -72,7 +74,8 @@ def get_previous_pairs(channel, lookback_days=LOOKBACK_DAYS):
     # We are only interested in text that contain the MAGICAL_TEXT text and '<@U' (in prod) or '@' in testing.
     # TODO: only extract messages sent by the BOT, so we do not process messages from users using the same MAGICAL_TEXT
     # if testing:
-    texts = [t['text'] for t in conversation_history if MAGICAL_TEXT in t['text'] and '@' in t['text']]
+    texts = [t['text']
+             for t in conversation_history if MAGICAL_TEXT in t['text'] and '@' in t['text']]
     # else:
     #     texts = [t['text'] for t in conversation_history if MAGICAL_TEXT in t['text'] and '<@U' in t['text']]
 
@@ -113,9 +116,11 @@ def post_to_slack_channel_message(message, channel):
     try:
         if isinstance(message, list):
             # The user would like to send a block
-            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL_ID, blocks=message)
+            response = client.chat_postMessage(
+                channel=LOOKBACK_CHANNEL_ID, blocks=message)
         else:
-            response = client.chat_postMessage(channel=LOOKBACK_CHANNEL_ID, text=message)
+            response = client.chat_postMessage(
+                channel=LOOKBACK_CHANNEL_ID, text=message)
     except SlackApiError as e:
         # From v2.x of the slack library failed responses are raised as errors. Here we catch the exception and
         # downgrade the alert
@@ -160,7 +165,8 @@ def get_members_list(channel):
         # if testing:
         # non_notifying_pairings = [f'@{u["name"]}' for u in users_list if u['id'] in member_ids and not u['is_bot']]
         # else:
-        members = [f'<@{u["id"]}>' for u in users_list if u['id'] in member_ids and not u['is_bot']]
+        members = [f'<@{u["id"]}>' for u in users_list if u['id']
+                   in member_ids and not u['is_bot']]
 
         return members
 
@@ -231,17 +237,23 @@ def generate_pairs(members, previous_pairs=None):
         '''
         # print(len(members_previous_matches))
         if members_previous_matches:
-            member2_candidates = [member for member in members if member not in members_previous_matches[member1]]
+            member2_candidates = [
+                member for member in members if member not in members_previous_matches[member1]]
 
             try:
-                member2 = random.sample(member2_candidates, 1)[0]
+
+                idx_member2 = random.randrange(0, len(member2_candidates))
+                member2 = member2_candidates[idx_member2]
             except ValueError:
                 # There is no untaken matches left, so just pick a random from members
-                member2 = random.sample(members, 1)[0]
+                idx_member2 = random.randrange(0, len(members))
+                member2 = members[idx_member2]
         else:
-            member2 = random.sample(members, 1)[0]
+            idx_member2 = random.randrange(0, len(members))
+            member2 = members[idx_member2]
 
-        members.remove(member2)
+        members[idx_member2] = members[-1]
+        members.pop()
         pair = (member1, member2)
 
         return pair, members
@@ -254,9 +266,11 @@ def generate_pairs(members, previous_pairs=None):
         while len(members):
             if len(members) >= 2:
                 member1 = members.pop()
-                pair, members = pair_excluding_historic_matches(member1, members, members_previous_matches)
+                pair, members = pair_excluding_historic_matches(
+                    member1, members, members_previous_matches)
             else:
-                pair, members = pair_excluding_historic_matches(first_member, members, members_previous_matches)
+                pair, members = pair_excluding_historic_matches(
+                    first_member, members, members_previous_matches)
 
             pairs.append(pair)
 
@@ -276,7 +290,8 @@ def format_message_from_list_of_pairs(pairs):
 
     if len(pairs):
         m1 = MAGICAL_TEXT + ':\n'
-        pair_strings = ''.join([f' {i+1}. {p1} and {p2}\n' for i, (p1, p2) in enumerate(pairs)])
+        pair_strings = ''.join(
+            [f' {i+1}. {p1} and {p2}\n' for i, (p1, p2) in enumerate(pairs)])
         m2 = f'An uneven number of members results in one person getting two coffee matches. Matches from the last {LOOKBACK_DAYS} days considered to avoid matching the same members several times in the time period.'
         message = m1 + pair_strings + m2
         return message
@@ -289,24 +304,24 @@ def dm_pairs_to_individuals(pairs):
     Args:
         pairs (list): list of tuples of slack ID
     '''
-    json_array = json.load(open ('quotes.json'))
-    quote = random.sample(json_array,1)
+    json_array = json.load(open('quotes.json'))
+    quote = random.sample(json_array, 1)
     for pair in pairs:
         newPairs = []
         for p in pair:
             newPairs.append(p[2:len(p)-1])
-        res = client.conversations_open(users=newPairs,return_im=True)
+        res = client.conversations_open(users=newPairs, return_im=True)
         print("hello")
         global LUNCHBUDDY_MESSAGE
-        message = LUNCHBUDDY_MESSAGE+"\n \n \n" +str(quote)
-        res2 = client.chat_postMessage(channel=res["channel"]["id"],text=message)
+        message = LUNCHBUDDY_MESSAGE+"\n \n \n" + str(quote)
+        res2 = client.chat_postMessage(
+            channel=res["channel"]["id"], text=message)
         print(res2)
-        
-
 
     return True
 
-def pyslackrandomcoffee(work_ids=None,testing=False):
+
+def pyslackrandomcoffee(work_ids=None, testing=False):
     '''Pairs the members of a slack channel up randomly and post it back to the channel in a message.
 
     Args:
@@ -317,16 +332,16 @@ def pyslackrandomcoffee(work_ids=None,testing=False):
         This script does utilize work_ids, but STAU requires it, so it is present, but unused.
     '''
 
-    members        = get_members_list(CHANNEL_ID)
+    members = get_members_list(CHANNEL_ID)
     previous_pairs = get_previous_pairs(LOOKBACK_CHANNEL_ID)
-    pairs          = generate_pairs(members, previous_pairs)
-    message        = format_message_from_list_of_pairs(pairs)
+    pairs = generate_pairs(members, previous_pairs)
+    message = format_message_from_list_of_pairs(pairs)
 
     if message:
         print(message)
         post_to_slack_channel_message(message, LOOKBACK_CHANNEL_ID)
         dm_pairs_to_individuals(pairs)
-    
+
 
 if __name__ == '__main__':
     pyslackrandomcoffee(testing=False)
